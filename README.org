@@ -1,0 +1,9 @@
+* Emacs Google Calendar Sync
+
+This application is mainy used to sync between google calendar and emacs diary.
+
+** Prerequisite
+1. This application use *dropbox* to save emacs diary.
+
+** TODO emacs diary supported format
+

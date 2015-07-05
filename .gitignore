@@ -3,5 +3,7 @@ gradle/
 *.iml
 .idea
 .gradle
+*~
+.#*
 local.properties
 *.patch
