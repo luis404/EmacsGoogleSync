@@ -1,25 +1,30 @@
 package com.luis404.emacsgooglesync;
 
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import com.luis404.emacsgooglesync.dropbox.DropboxAuth;
 import com.luis404.emacsgooglesync.dropbox.DropboxFileOp;
-import com.luis404.emacsgooglesync.sample.R;
+import com.luis404.emacsgooglesync.googlecalendar.GCalendar;
 
 
 public class MainActivity extends Activity implements View.OnClickListener{
-    private Button mBtnAuth;
-    private Button mBtnUploadFile;
-    private Button mBtnDownloadFile;
+    private Button mBtnDropbox;
+    private Button mBtnGoogle;
+    private Button mBtnSync;
     private Context mContext;
+
     private DropboxAuth mDropBoxAuth;
+    private GCalendar mGoogleCalendar;
+
+    private boolean mGoogleEnabled;
+    private boolean mDropboxEnabled;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -29,31 +34,73 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
         initView();
         registerHandler();
+
+        mDropBoxAuth = DropboxAuth.getInstance(mContext);
+        mDropboxEnabled = mDropBoxAuth.finishAuth();
+        mGoogleCalendar = GCalendar.getInstance(this);
+        mGoogleEnabled = mGoogleCalendar.getAccountName() == null ? false : true;
+
+        if(mDropboxEnabled) {
+            mBtnDropbox.setText(R.string.dropbox_enabled);
+            mBtnDropbox.setClickable(false);
+        }
+
+        if(mGoogleEnabled){
+            mBtnGoogle.setText(R.string.google_calendar_enabled);
+            mBtnGoogle.setClickable(false);
+        }
     }
 
     private void initView(){
-        mBtnAuth = (Button)findViewById(R.id.auth);
-        mBtnUploadFile = (Button)findViewById(R.id.upload_file);
-        mBtnDownloadFile = (Button)findViewById(R.id.download_file);
-        mDropBoxAuth = DropboxAuth.getInstance(mContext);
+        mBtnDropbox = (Button)findViewById(R.id.dropbox);
+        mBtnGoogle = (Button)findViewById(R.id.google);
+        mBtnSync = (Button)findViewById(R.id.sync);
     }
 
     private void registerHandler(){
-        mBtnAuth.setOnClickListener(this);
-        mBtnUploadFile.setOnClickListener(this);
-        mBtnDownloadFile.setOnClickListener(this);
+        mBtnDropbox.setOnClickListener(this);
+        mBtnGoogle.setOnClickListener(this);
+        mBtnSync.setOnClickListener(this);
     }
 
     @Override
     protected void onResume(){
         super.onResume();
-        if(mDropBoxAuth.finishAuth()){
-            mBtnAuth.setText(R.string.hello_world);
-            mBtnAuth.setClickable(false);
-            mBtnUploadFile.setVisibility(View.VISIBLE);
-        } else {
-            Toast.makeText(this, "Dropbox Authentication Failed", Toast.LENGTH_LONG)
-                    .show();
+        ifSetDropbox();
+    }
+
+    private void ifSetDropbox(){
+        if(!mDropboxEnabled) {
+            if (mDropBoxAuth.finishAuth()) {
+                mDropboxEnabled = true;
+                mBtnDropbox.setText(R.string.dropbox_enabled);
+                mBtnDropbox.setClickable(false);
+            } else {
+                Toast.makeText(this, "Dropbox Authentication Failed", Toast.LENGTH_LONG)
+                        .show();
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCoe, Intent data){
+        super.onActivityResult(requestCode, resultCoe, data);
+
+        switch (requestCode){
+            case GCalendar.REQUEST_ACCOUNT_PICKER:
+                if(resultCoe == RESULT_OK && data != null
+                        && data.getExtras() != null) {
+                    String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                    if(accountName != null){
+                        mBtnGoogle.setText(R.string.google_calendar_enabled);
+                        mBtnGoogle.setClickable(false);
+                        mGoogleCalendar.saveAccountName(accountName);
+                    }
+                } else {
+                    Toast.makeText(this, "Choose google account failed", Toast.LENGTH_LONG)
+                            .show();
+                }
+                break;
         }
     }
 
@@ -62,16 +109,19 @@ public class MainActivity extends Activity implements View.OnClickListener{
     public void onClick(View v) {
         int id = v.getId();
         switch (id){
-            case R.id.auth:
+            case R.id.dropbox:
                 mDropBoxAuth.startAuth();
                 break;
-            case R.id.upload_file:
-                DropboxFileOp op1 = new DropboxFileOp(this);
-                op1.uploadFile("/sdcard/testDropboxApp.txt", "helo");
+            case R.id.google:
+                mGoogleCalendar.chooseAccount();
                 break;
-            case R.id.download_file:
-                DropboxFileOp op2 = new DropboxFileOp(this);
-                op2.downloadFile("/sdcard/emacs-diary", "/lx/emacs-diary");
+            case R.id.sync:
+                if(mDropboxEnabled && mGoogleEnabled){
+                    //dosync
+                } else {
+
+                }
+
                 break;
         }
     }

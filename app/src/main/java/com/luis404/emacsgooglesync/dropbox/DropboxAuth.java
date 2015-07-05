@@ -7,7 +7,7 @@ import android.preference.PreferenceManager;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
-import com.luis404.emacsgooglesync.sample.BuildConfig;
+import com.luis404.emacsgooglesync.BuildConfig;
 
 /**
  * Created by xzc on 15/7/4.
@@ -35,6 +35,7 @@ public class DropboxAuth {
         return sInstance;
     }
 
+    //Sync dropbox account when create
     private DropboxAuth(Context context){
         mContext = context;
         AppKeyPair keyPair = new AppKeyPair(APP_KEY, APP_SECRET);
